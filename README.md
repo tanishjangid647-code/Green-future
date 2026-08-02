@@ -69,4 +69,4 @@ B.Tech (Artificial Intelligence)
 
 ## 📧 Contact
 
-Email: your-email@example.com
+Email:tanishjangid647@gmail.com
