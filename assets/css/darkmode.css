@@ -1,0 +1,63 @@
+/* Green Future - Dark Mode Styling */
+
+body.dark-mode {
+  --bg-light: #121212;
+  --card-bg: #1e1e1e;
+  --text-dark: #f1f5f9;
+  --text-muted: #94a3b8;
+  --border-color: #334155;
+  --glass-bg: rgba(30, 41, 59, 0.85);
+  --glass-border: rgba(76, 175, 80, 0.2);
+}
+
+body.dark-mode .navbar-custom {
+  background: rgba(18, 18, 18, 0.95);
+  border-bottom-color: #334155;
+}
+
+body.dark-mode .navbar-custom .nav-link {
+  color: #e2e8f0;
+}
+
+body.dark-mode .campaign-card,
+body.dark-mode .glass-card,
+body.dark-mode .modal-content,
+body.dark-mode .dropdown-menu {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+body.dark-mode .table {
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+body.dark-mode .table th,
+body.dark-mode .table td {
+  border-color: #334155 !important;
+  background-color: #1e293b !important;
+}
+
+body.dark-mode .chat-box {
+  background-color: #1e293b;
+  border-color: #334155;
+}
+
+body.dark-mode .chat-body {
+  background-color: #0f172a;
+}
+
+body.dark-mode .chat-msg.bot {
+  background-color: #334155;
+  color: #f8fafc;
+  border-color: #475569;
+}
+
+body.dark-mode input,
+body.dark-mode select,
+body.dark-mode textarea {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}

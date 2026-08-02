@@ -1,0 +1,14 @@
+# Green Future - Apache Security & Rewrite Rules
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+</IfModule>
+
+# Protect sensitive configuration files
+<FilesMatch "schema\.sql|db\.php">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
