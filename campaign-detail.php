@@ -1104,7 +1104,7 @@ $reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 
                 <?php
-$campaign_url = base_url('campaign-detail.php?id=' . (int)$camp['id']);
+$campaign_url = 'https://10tanish.infinityfreeapp.com/campaign-detail.php?id=' . (int)$camp['id'];
 ?>
 
 <img

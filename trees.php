@@ -590,7 +590,7 @@ function tree_health_badge($status)
                                gap-3 p-3 bg-light rounded-3">
 
          <?php
-$tree_url = base_url('trees.php?code=' . urlencode($tree['tree_code']));
+$tree_url = 'https://10tanish.infinityfreeapp.com/trees.php?code=' . urlencode($tree['tree_code']);
 ?>
 
 <img
