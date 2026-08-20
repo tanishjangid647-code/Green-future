@@ -1103,12 +1103,16 @@ $reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     </small>
 
 
-                    <img
-                        src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=GF-CAMPAIGN-<?php echo (int)$camp['id']; ?>"
-                        class="img-fluid rounded border"
-                        alt="Campaign QR Code"
-                        loading="lazy"
-                    >
+                <?php
+$campaign_url = base_url('campaign-detail.php?id=' . (int)$camp['id']);
+?>
+
+<img
+    src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=<?php echo urlencode($campaign_url); ?>"
+    class="img-fluid rounded border"
+    alt="Campaign QR Code"
+    loading="lazy"
+>
 
                 </div>
 

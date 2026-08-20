@@ -589,13 +589,16 @@ function tree_health_badge($status)
                         class="d-flex align-items-center
                                gap-3 p-3 bg-light rounded-3">
 
-                        <img
-                            src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=GF-TREE-<?php echo urlencode($tree['tree_code']); ?>"
-                            class="rounded border"
-                            alt="Tree QR Verification"
-                            loading="lazy"
-                        >
+         <?php
+$tree_url = base_url('trees.php?code=' . urlencode($tree['tree_code']));
+?>
 
+<img
+    src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=<?php echo urlencode($tree_url); ?>"
+    class="rounded border"
+    alt="Tree QR Verification"
+    loading="lazy"
+>
 
                         <div>
 
