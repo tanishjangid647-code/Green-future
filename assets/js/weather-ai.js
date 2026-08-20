@@ -1,36 +1,201 @@
-/* Green Future - AI Tree Species Recommender & Live Weather Widget */
 
-// Weather Widget Simulator / API Call
-function fetchCityWeather(city = 'Mumbai') {
+// Real Weather Widget using Open-Meteo API
+async function fetchCityWeather(city = 'Mumbai') {
+
   const weatherCard = document.getElementById('weather-widget');
+
   if (!weatherCard) return;
 
-  const weatherData = {
-    'Mumbai': { temp: 29, desc: 'Partly Cloudy', humidity: 78, aqi: 62, status: 'Good' },
-    'Pune': { temp: 26, desc: 'Light Rain', humidity: 82, aqi: 45, status: 'Excellent' },
-    'Bangalore': { temp: 24, desc: 'Pleasant Breeze', humidity: 65, aqi: 38, status: 'Excellent' },
-    'Delhi': { temp: 33, desc: 'Hazy Sun', humidity: 55, aqi: 142, status: 'Moderate' },
-    'Kolkata': { temp: 30, desc: 'Humid', humidity: 85, aqi: 88, status: 'Moderate' }
-  };
+  city = city.trim() || 'Mumbai';
 
-  const data = weatherData[city] || weatherData['Mumbai'];
+  // Loading state
   weatherCard.innerHTML = `
-    <div class="d-flex align-items-center justify-content-between">
-      <div>
-        <h6 class="mb-1 text-muted"><i class="fas fa-map-marker-alt text-danger me-1"></i> ${city} Weather</h6>
-        <h3 class="mb-0 fw-bold text-success">${data.temp}°C</h3>
-        <small class="text-muted">${data.desc} • Humidity: ${data.humidity}%</small>
-      </div>
-      <div class="text-end">
-        <span class="badge ${data.aqi < 50 ? 'bg-success' : 'bg-warning text-dark'} px-3 py-2 rounded-pill">
-          AQI ${data.aqi} (${data.status})
-        </span>
-        <div class="mt-2 text-muted small"><i class="fas fa-cloud-sun text-warning me-1"></i> Optimal Planting Condition</div>
-      </div>
+    <div class="text-center py-3">
+      <div class="spinner-border text-success" role="status"></div>
+      <p class="small text-muted mt-2 mb-0">
+        Loading weather for ${city}...
+      </p>
     </div>
   `;
+
+  try {
+
+    // ---------------------------------------------------------
+    // 1. Convert city name into latitude and longitude
+    // ---------------------------------------------------------
+
+    const geoResponse = await fetch(
+      `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json&countryCode=IN`
+    );
+
+    if (!geoResponse.ok) {
+      throw new Error('Unable to find location');
+    }
+
+    const geoData = await geoResponse.json();
+
+    if (!geoData.results || geoData.results.length === 0) {
+      throw new Error(`Location "${city}" not found`);
+    }
+
+    const location = geoData.results[0];
+
+    const latitude = location.latitude;
+    const longitude = location.longitude;
+
+    const locationName = location.name;
+    const stateName = location.admin1 || 'India';
+
+
+    // ---------------------------------------------------------
+    // 2. Get current weather
+    // ---------------------------------------------------------
+
+    const weatherResponse = await fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&temperature_unit=celsius&wind_speed_unit=kmh&timezone=auto`
+    );
+
+    if (!weatherResponse.ok) {
+      throw new Error('Weather service unavailable');
+    }
+
+    const weatherData = await weatherResponse.json();
+
+    const current = weatherData.current;
+
+
+    // ---------------------------------------------------------
+    // 3. Convert weather code to readable description
+    // ---------------------------------------------------------
+
+    const weatherDescription =
+      getWeatherDescription(current.weather_code);
+
+
+    // ---------------------------------------------------------
+    // 4. Display weather
+    // ---------------------------------------------------------
+
+    weatherCard.innerHTML = `
+      <div class="d-flex align-items-center justify-content-between">
+
+        <div>
+
+          <h6 class="mb-1 text-muted">
+            <i class="fas fa-map-marker-alt text-danger me-1"></i>
+            ${locationName}, ${stateName} Weather
+          </h6>
+
+          <h3 class="mb-0 fw-bold text-success">
+            ${Math.round(current.temperature_2m)}°C
+          </h3>
+
+          <small class="text-muted">
+            ${weatherDescription}
+            • Humidity: ${current.relative_humidity_2m}%
+          </small>
+
+          <div class="small text-muted mt-1">
+            Feels like ${Math.round(current.apparent_temperature)}°C
+            • Wind ${Math.round(current.wind_speed_10m)} km/h
+          </div>
+
+        </div>
+
+        <div class="text-end">
+
+          <span class="badge bg-success px-3 py-2 rounded-pill">
+            Live Weather
+          </span>
+
+          <div class="mt-2 text-muted small">
+            <i class="fas fa-cloud-sun text-warning me-1"></i>
+            Updated automatically
+          </div>
+
+        </div>
+
+      </div>
+
+      <div class="text-muted mt-2" style="font-size: 11px;">
+        Weather data by Open-Meteo
+      </div>
+    `;
+
+  } catch (error) {
+
+    console.error('Weather error:', error);
+
+    weatherCard.innerHTML = `
+      <div class="alert alert-warning mb-0 rounded-3">
+
+        <i class="fas fa-exclamation-triangle me-2"></i>
+
+        Unable to load weather for
+        <strong>${city}</strong>.
+
+        <div class="small mt-1">
+          Please check the city name or try again later.
+        </div>
+
+      </div>
+    `;
+  }
 }
 
+
+// ---------------------------------------------------------
+// Weather Code → Description
+// ---------------------------------------------------------
+
+function getWeatherDescription(code) {
+
+  const weatherCodes = {
+
+    0: 'Clear Sky',
+
+    1: 'Mainly Clear',
+    2: 'Partly Cloudy',
+    3: 'Overcast',
+
+    45: 'Fog',
+    48: 'Depositing Rime Fog',
+
+    51: 'Light Drizzle',
+    53: 'Moderate Drizzle',
+    55: 'Dense Drizzle',
+
+    56: 'Light Freezing Drizzle',
+    57: 'Dense Freezing Drizzle',
+
+    61: 'Slight Rain',
+    63: 'Moderate Rain',
+    65: 'Heavy Rain',
+
+    66: 'Light Freezing Rain',
+    67: 'Heavy Freezing Rain',
+
+    71: 'Slight Snow',
+    73: 'Moderate Snow',
+    75: 'Heavy Snow',
+
+    77: 'Snow Grains',
+
+    80: 'Slight Rain Showers',
+    81: 'Moderate Rain Showers',
+    82: 'Violent Rain Showers',
+
+    85: 'Slight Snow Showers',
+    86: 'Heavy Snow Showers',
+
+    95: 'Thunderstorm',
+
+    96: 'Thunderstorm with Slight Hail',
+    99: 'Thunderstorm with Heavy Hail'
+  };
+
+  return weatherCodes[code] || 'Unknown Conditions';
+}
 // AI Tree Species Recommendation Logic
 function initAIRecommender() {
   const form = document.getElementById('ai-recommender-form');
@@ -106,6 +271,14 @@ function initAIRecommender() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  fetchCityWeather('Mumbai');
+
+  const weatherCard =
+    document.getElementById('weather-widget');
+
+  const userCity =
+    weatherCard?.dataset.city || 'Mumbai';
+
+  fetchCityWeather(userCity);
+
   initAIRecommender();
 });

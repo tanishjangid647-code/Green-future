@@ -55,7 +55,11 @@ $enrolled_drives = $stmt->fetchAll();
       </div>
 
       <!-- Live Weather Card -->
-      <div class="glass-card p-3 mb-4 rounded-4" id="weather-widget">
+      <div
+    class="card p-3 mb-4 rounded-4"
+    id="weather-widget"
+    data-city="<?php echo sanitize(current_user()['city'] ?? 'Mumbai'); ?>"
+>
         <!-- Loaded via weather-ai.js -->
       </div>
 
