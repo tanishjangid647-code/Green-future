@@ -455,6 +455,12 @@ elseif ($action === 'forgot_password') {
 
     $email = strtolower(trim($_POST['email'] ?? ''));
 
+    /*
+    |--------------------------------------------------------------------------
+    | Validate Email
+    |--------------------------------------------------------------------------
+    */
+
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 
         set_flash(
@@ -462,17 +468,179 @@ elseif ($action === 'forgot_password') {
             'Please enter a valid email address.'
         );
 
-        header('Location: ' . base_url('auth/forgot-password.php'));
+        header(
+            'Location: ' .
+            base_url('auth/forgot-password.php')
+        );
+
         exit;
     }
 
+
     /*
-    | Don't reveal whether the email exists.
+    |--------------------------------------------------------------------------
+    | Find User
+    |--------------------------------------------------------------------------
+    */
+
+    $stmt = $pdo->prepare("
+        SELECT id, email
+        FROM users
+        WHERE email = ?
+        AND status = 'active'
+        LIMIT 1
+    ");
+
+    $stmt->execute([$email]);
+
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Generic Response
+    |--------------------------------------------------------------------------
+    |
+    | We don't reveal whether an email exists.
+    |
+    */
+
+    if (!$user) {
+
+        set_flash(
+            'success',
+            'If an account exists with this email, password reset instructions will be sent.'
+        );
+
+        header(
+            'Location: ' .
+            base_url('auth/login.php')
+        );
+
+        exit;
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Delete Previous Reset Tokens
+    |--------------------------------------------------------------------------
+    */
+
+    $delete = $pdo->prepare("
+        DELETE FROM password_resets
+        WHERE user_id = ?
+    ");
+
+    $delete->execute([$user['id']]);
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Generate Secure Reset Token
+    |--------------------------------------------------------------------------
+    */
+
+    $token = bin2hex(random_bytes(32));
+
+    /*
+    | Only the SHA-256 hash is stored in the database.
+    */
+
+    $token_hash = hash(
+        'sha256',
+        $token
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Token Expiration
+    |--------------------------------------------------------------------------
+    |
+    | Token is valid for 30 minutes.
+    |
+    */
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Store Token
+    |--------------------------------------------------------------------------
+    */
+
+   $stmt = $pdo->prepare("
+    INSERT INTO password_resets
+    (
+        user_id,
+        token_hash,
+        expires_at
+    )
+    VALUES
+    (?, ?, DATE_ADD(NOW(), INTERVAL 30 MINUTE))
+");
+
+$stmt->execute([
+    $user['id'],
+    $token_hash
+]);
+
+    /*
+    |--------------------------------------------------------------------------
+    | DEVELOPMENT MODE
+    |--------------------------------------------------------------------------
+    |
+    | XAMPP doesn't automatically send email.
+    |
+    | For LOCAL TESTING ONLY, we temporarily redirect directly
+    | to the reset page.
+    |
+    | Later we will replace this with real email sending.
+    |
+    */
+
+    $reset_url =
+        base_url('auth/reset-password.php') .
+        '?token=' .
+        urlencode($token);
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Local Development Reset
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        isset($_SERVER['HTTP_HOST']) &&
+        (
+            str_contains($_SERVER['HTTP_HOST'], 'localhost') ||
+            str_contains($_SERVER['HTTP_HOST'], '127.0.0.1')
+        )
+    ) {
+
+        header(
+            'Location: ' .
+            $reset_url
+        );
+
+        exit;
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Production Response
+    |--------------------------------------------------------------------------
+    |
+    | Real email notification will be connected here later.
+    |
     */
 
     set_flash(
         'success',
-        'If an account exists with this email, password reset instructions will be sent.'
+        'If an account exists with this email, password reset instructions have been sent.'
     );
 
     header(
@@ -483,12 +651,231 @@ elseif ($action === 'forgot_password') {
     exit;
 }
 
-
 /*
 |--------------------------------------------------------------------------
 | INVALID ACTION
 |--------------------------------------------------------------------------
 */
+/*
+|--------------------------------------------------------------------------
+| RESET PASSWORD
+|--------------------------------------------------------------------------
+*/
+elseif ($action === 'reset_password') {
+
+    $token = trim($_POST['token'] ?? '');
+
+    $password = $_POST['password'] ?? '';
+    $confirm_password = $_POST['confirm_password'] ?? '';
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Validate Token
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        empty($token) ||
+        !preg_match('/^[a-f0-9]{64}$/i', $token)
+    ) {
+
+        set_flash(
+            'error',
+            'Invalid password reset token.'
+        );
+
+        header(
+            'Location: ' .
+            base_url('auth/login.php')
+        );
+
+        exit;
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Validate Password
+    |--------------------------------------------------------------------------
+    */
+
+    if (strlen($password) < 8) {
+
+        set_flash(
+            'error',
+            'Password must contain at least 8 characters.'
+        );
+
+        header(
+            'Location: ' .
+            base_url('auth/login.php')
+        );
+
+        exit;
+    }
+
+
+    if ($password !== $confirm_password) {
+
+        set_flash(
+            'error',
+            'Passwords do not match.'
+        );
+
+        header(
+            'Location: ' .
+            base_url('auth/login.php')
+        );
+
+        exit;
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Hash Token
+    |--------------------------------------------------------------------------
+    */
+
+    $token_hash = hash(
+        'sha256',
+        $token
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Find Valid Reset Token
+    |--------------------------------------------------------------------------
+    */
+
+    $stmt = $pdo->prepare("
+        SELECT
+            id,
+            user_id
+        FROM password_resets
+        WHERE token_hash = ?
+          AND used_at IS NULL
+          AND expires_at > NOW()
+        LIMIT 1
+    ");
+
+    $stmt->execute([$token_hash]);
+
+    $reset = $stmt->fetch(PDO::FETCH_ASSOC);
+
+
+    if (!$reset) {
+
+        set_flash(
+            'error',
+            'This password reset link is invalid or expired.'
+        );
+
+        header(
+            'Location: ' .
+            base_url('auth/login.php')
+        );
+
+        exit;
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Hash New Password
+    |--------------------------------------------------------------------------
+    */
+
+    $new_password_hash = password_hash(
+        $password,
+        PASSWORD_DEFAULT
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Update Password + Consume Token
+    |--------------------------------------------------------------------------
+    */
+
+    try {
+
+        $pdo->beginTransaction();
+
+
+        /*
+        | Update user password
+        */
+
+        $update = $pdo->prepare("
+            UPDATE users
+            SET password = ?
+            WHERE id = ?
+        ");
+
+        $update->execute([
+            $new_password_hash,
+            $reset['user_id']
+        ]);
+
+
+        /*
+        | Mark reset token as used
+        */
+
+        $consume = $pdo->prepare("
+            UPDATE password_resets
+            SET used_at = NOW()
+            WHERE id = ?
+        ");
+
+        $consume->execute([
+            $reset['id']
+        ]);
+
+
+        $pdo->commit();
+
+
+        log_activity(
+            'Password was successfully reset'
+        );
+
+
+        set_flash(
+            'success',
+            'Your password has been reset successfully. Please login.'
+        );
+
+
+        header(
+            'Location: ' .
+            base_url('auth/login.php')
+        );
+
+        exit;
+
+    } catch (PDOException $e) {
+
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+
+        set_flash(
+            'error',
+            'Unable to reset your password. Please try again.'
+        );
+
+        header(
+            'Location: ' .
+            base_url('auth/login.php')
+        );
+
+        exit;
+    }
+}
 
 else {
 

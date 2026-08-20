@@ -18,6 +18,9 @@ require_once __DIR__ . '/../includes/navbar.php';
 
         <form action="<?php echo base_url('auth/process-auth.php'); ?>" method="POST">
           <input type="hidden" name="action" value="forgot_password">
+           <input type="hidden"
+           name="csrf_token"
+           value="<?php echo htmlspecialchars(generate_csrf_token()); ?>">
 
           <div class="mb-4">
             <label class="form-label font-weight-semibold">Email Address</label>
