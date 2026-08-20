@@ -255,6 +255,31 @@ $stmt->execute($params);
 $campaigns =
     $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+    /*
+|--------------------------------------------------------------------------
+| Wishlist Status
+|--------------------------------------------------------------------------
+*/
+
+$wishlist_ids = [];
+
+if (isset($_SESSION['user_id'])) {
+
+    $wishlist_stmt = $pdo->prepare("
+        SELECT campaign_id
+        FROM wishlist
+        WHERE user_id = ?
+    ");
+
+    $wishlist_stmt->execute([
+        (int) $_SESSION['user_id']
+    ]);
+
+    $wishlist_ids = array_map(
+        'intval',
+        $wishlist_stmt->fetchAll(PDO::FETCH_COLUMN)
+    );
+}
 
 /*
 |--------------------------------------------------------------------------
@@ -837,7 +862,69 @@ function campaign_filter_url($page_number)
                                 ?>"
                                 loading="lazy"
                             >
+                            <?php if (isset($_SESSION['user_id'])): ?>
 
+    <?php
+    $is_wishlisted =
+        in_array(
+            (int) $camp['id'],
+            $wishlist_ids,
+            true
+        );
+    ?>
+
+    <form
+        action="<?php echo base_url('wishlist.php'); ?>"
+        method="POST"
+        class="position-absolute top-0 start-0 m-3">
+
+        <input
+            type="hidden"
+            name="action"
+            value="<?php echo $is_wishlisted ? 'remove' : 'add'; ?>">
+
+        <input
+            type="hidden"
+            name="campaign_id"
+            value="<?php echo (int)$camp['id']; ?>">
+
+        <input
+            type="hidden"
+            name="csrf_token"
+            value="<?php
+            echo htmlspecialchars(
+                generate_csrf_token()
+            );
+            ?>">
+
+        <input
+            type="hidden"
+            name="redirect"
+            value="campaigns.php">
+
+        <button
+            type="submit"
+            class="btn btn-light rounded-circle shadow-sm"
+            style="width:42px;height:42px;"
+            title="<?php
+            echo $is_wishlisted
+                ? 'Remove from Wishlist'
+                : 'Save to Wishlist';
+            ?>">
+
+            <i
+                class="<?php
+                echo $is_wishlisted
+                    ? 'fas fa-heart text-danger'
+                    : 'far fa-heart text-danger';
+                ?>">
+            </i>
+
+        </button>
+
+    </form>
+
+<?php endif; ?>
                             <span
                                 class="badge <?php echo $status_class; ?>
                                        position-absolute top-0 end-0
