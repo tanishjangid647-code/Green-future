@@ -9,12 +9,45 @@ require_once __DIR__ . '/db.php';
 
 // Base URL generator
 function base_url($path = '') {
-    $script_dir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
-    // Strip trailing subfolders if present in path calculation
-    $base = rtrim($script_dir, '/');
-    if (strpos($base, '/admin') !== false || strpos($base, '/user') !== false || strpos($base, '/volunteer') !== false || strpos($base, '/auth') !== false) {
-        $base = dirname($base);
+
+    // Detect HTTP or HTTPS
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        ? 'https'
+        : 'http';
+
+    // Get current host
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+
+    // Get project directory
+    $script_dir = str_replace(
+        '\\',
+        '/',
+        dirname($_SERVER['SCRIPT_NAME'])
+    );
+
+    // Remove nested folders such as /admin, /user, /volunteer, /auth
+    $base_path = $script_dir;
+
+    $folders = [
+        '/admin',
+        '/user',
+        '/volunteer',
+        '/auth'
+    ];
+
+    foreach ($folders as $folder) {
+
+        if (strpos($base_path, $folder) !== false) {
+            $base_path = dirname($base_path);
+            break;
+        }
     }
+
+    $base_path = rtrim($base_path, '/');
+
+    // Build complete website URL
+    $base = $scheme . '://' . $host . $base_path;
+
     return rtrim($base, '/') . '/' . ltrim($path, '/');
 }
 
