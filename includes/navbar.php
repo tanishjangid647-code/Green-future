@@ -47,11 +47,45 @@ $user = current_user();
                 <li><a class="dropdown-item" href="<?php echo base_url('admin/dashboard.php'); ?>"><i class="fas fa-chart-line text-success me-2"></i> Admin Panel</a></li>
               <?php elseif ($user['role'] === 'volunteer'): ?>
                 <li><a class="dropdown-item" href="<?php echo base_url('volunteer/dashboard.php'); ?>"><i class="fas fa-tasks text-success me-2"></i> Volunteer Portal</a></li>
-              <?php else: ?>
-                <li><a class="dropdown-item" href="<?php echo base_url('user/dashboard.php'); ?>"><i class="fas fa-th-large text-success me-2"></i> My Dashboard</a></li>
-                <li><a class="dropdown-item" href="<?php echo base_url('user/my-trees.php'); ?>"><i class="fas fa-seedling text-success me-2"></i> My Trees</a></li>
-                <li><a class="dropdown-item" href="<?php echo base_url('user/certificates.php'); ?>"><i class="fas fa-certificate text-success me-2"></i> Certificates</a></li>
-              <?php endif; ?>
+           <?php else: ?>
+
+  <li>
+    <a class="dropdown-item"
+       href="<?php echo base_url('user/dashboard.php'); ?>">
+      <i class="fas fa-th-large text-success me-2"></i>
+      My Dashboard
+    </a>
+  </li>
+
+  <li>
+    <a class="dropdown-item"
+       href="<?php echo base_url('user/my-trees.php'); ?>">
+      <i class="fas fa-seedling text-success me-2"></i>
+      My Trees
+    </a>
+  </li>
+
+  <li>
+    <a class="dropdown-item"
+       href="<?php echo base_url('user/wishlist.php'); ?>">
+      <i class="fas fa-heart text-danger me-2"></i>
+      My Wishlist
+    </a>
+  </li>
+
+
+
+
+  
+  <li>
+    <a class="dropdown-item"
+       href="<?php echo base_url('user/certificates.php'); ?>">
+      <i class="fas fa-certificate text-success me-2"></i>
+      Certificates
+    </a>
+  </li>
+
+<?php endif; ?>
               <li><hr class="dropdown-divider"></li>
               <li><a class="dropdown-item text-danger" href="<?php echo base_url('auth/logout.php'); ?>"><i class="fas fa-sign-out-alt me-2"></i> Logout</a></li>
             </ul>
