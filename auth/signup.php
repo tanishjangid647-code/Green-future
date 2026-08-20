@@ -18,6 +18,9 @@ require_once __DIR__ . '/../includes/navbar.php';
 
         <form action="<?php echo base_url('auth/process-auth.php'); ?>" method="POST">
           <input type="hidden" name="action" value="signup">
+          <input type="hidden"
+       name="csrf_token"
+       value="<?php echo htmlspecialchars(generate_csrf_token()); ?>">
 
           <div class="row g-3 mb-3">
             <div class="col-md-6">
@@ -37,10 +40,7 @@ require_once __DIR__ . '/../includes/navbar.php';
             </div>
             <div class="col-md-6">
               <label class="form-label font-weight-semibold">Join As *</label>
-              <select name="role" class="form-select" required>
-                <option value="registered">Registered User (Plant & Sponsor Trees)</option>
-                <option value="volunteer">Volunteer (Verify Trees & Lead Drives)</option>
-              </select>
+             
             </div>
           </div>
 

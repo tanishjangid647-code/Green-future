@@ -1,114 +1,507 @@
 <?php
-// Green Future - Authentication Backend Handler
+// Green Future - Secure Authentication Backend Handler
+
 require_once __DIR__ . '/../config/helpers.php';
 
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
+/*
+|--------------------------------------------------------------------------
+| CSRF Protection
+|--------------------------------------------------------------------------
+*/
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    $csrf_token = $_POST['csrf_token'] ?? '';
+
+    if (!verify_csrf_token($csrf_token)) {
+
+        set_flash(
+            'error',
+            'Invalid security token. Please refresh the page and try again.'
+        );
+
+        header('Location: ' . base_url('auth/login.php'));
+        exit;
+    }
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| LOGIN
+|--------------------------------------------------------------------------
+*/
 if ($action === 'login') {
-    $email = sanitize($_POST['email'] ?? '');
+
+    $email = strtolower(trim($_POST['email'] ?? ''));
     $password = $_POST['password'] ?? '';
 
+    /*
+    |--------------------------------------------------------------------------
+    | Validation
+    |--------------------------------------------------------------------------
+    */
+
     if (empty($email) || empty($password)) {
-        set_flash('error', 'Please fill in both email and password.');
+
+        set_flash(
+            'error',
+            'Please fill in both email and password.'
+        );
+
         header('Location: ' . base_url('auth/login.php'));
         exit;
     }
 
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ?");
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+
+        set_flash(
+            'error',
+            'Please enter a valid email address.'
+        );
+
+        header('Location: ' . base_url('auth/login.php'));
+        exit;
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Find User
+    |--------------------------------------------------------------------------
+    */
+
+    $stmt = $pdo->prepare("
+        SELECT *
+        FROM users
+        WHERE email = ?
+        LIMIT 1
+    ");
+
     $stmt->execute([$email]);
-    $user = $stmt->fetch();
 
-    // Verify password (also allow default fallback hash verification)
-    if ($user && (password_verify($password, $user['password']) || $password === 'Admin@123' || $password === 'Volunteer@123' || $password === 'User@123')) {
-        if ($user['status'] !== 'active') {
-            set_flash('error', 'Your account has been deactivated or suspended.');
-            header('Location: ' . base_url('auth/login.php'));
-            exit;
-        }
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        $_SESSION['user_id'] = $user['id'];
-        $_SESSION['user_name'] = $user['full_name'];
-        $_SESSION['user_email'] = $user['email'];
-        $_SESSION['user_role'] = $user['role'];
 
-        log_activity("Logged into the system as {$user['role']}");
-        set_flash('success', "Welcome back, {$user['full_name']}!");
+    /*
+    |--------------------------------------------------------------------------
+    | Secure Password Verification
+    |--------------------------------------------------------------------------
+    |
+    | IMPORTANT:
+    | There are NO hard-coded passwords anymore.
+    |
+    */
 
-        // Redirect based on role
-        if ($user['role'] === 'admin') {
-            header('Location: ' . base_url('admin/dashboard.php'));
-        } elseif ($user['role'] === 'volunteer') {
-            header('Location: ' . base_url('volunteer/dashboard.php'));
-        } else {
-            header('Location: ' . base_url('user/dashboard.php'));
-        }
-        exit;
-    } else {
-        set_flash('error', 'Invalid email or password. Please try again.');
+    if (!$user || !password_verify($password, $user['password'])) {
+
+        set_flash(
+            'error',
+            'Invalid email or password. Please try again.'
+        );
+
         header('Location: ' . base_url('auth/login.php'));
         exit;
     }
 
-} elseif ($action === 'signup') {
-    $full_name = sanitize($_POST['full_name'] ?? '');
-    $email = sanitize($_POST['email'] ?? '');
-    $phone = sanitize($_POST['phone'] ?? '');
-    $city = sanitize($_POST['city'] ?? 'Mumbai');
-    $state = sanitize($_POST['state'] ?? 'Maharashtra');
-    $role = sanitize($_POST['role'] ?? 'registered');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Account Status
+    |--------------------------------------------------------------------------
+    */
+
+    if ($user['status'] !== 'active') {
+
+        set_flash(
+            'error',
+            'Your account has been deactivated or suspended.'
+        );
+
+        header('Location: ' . base_url('auth/login.php'));
+        exit;
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Regenerate Session ID
+    |--------------------------------------------------------------------------
+    |
+    | Protects against session fixation attacks.
+    |
+    */
+
+    session_regenerate_id(true);
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Store User Session
+    |--------------------------------------------------------------------------
+    */
+
+    $_SESSION['user_id'] = $user['id'];
+    $_SESSION['user_name'] = $user['full_name'];
+    $_SESSION['user_email'] = $user['email'];
+    $_SESSION['user_role'] = $user['role'];
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Activity Log
+    |--------------------------------------------------------------------------
+    */
+
+    log_activity(
+        "Logged into the system as {$user['role']}"
+    );
+
+
+    set_flash(
+        'success',
+        "Welcome back, {$user['full_name']}!"
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Role Based Redirect
+    |--------------------------------------------------------------------------
+    */
+
+    if ($user['role'] === 'admin') {
+
+        header(
+            'Location: ' .
+            base_url('admin/dashboard.php')
+        );
+
+    } elseif ($user['role'] === 'volunteer') {
+
+        header(
+            'Location: ' .
+            base_url('volunteer/dashboard.php')
+        );
+
+    } else {
+
+        header(
+            'Location: ' .
+            base_url('user/dashboard.php')
+        );
+    }
+
+    exit;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| SIGNUP
+|--------------------------------------------------------------------------
+*/
+elseif ($action === 'signup') {
+
+    $full_name = trim($_POST['full_name'] ?? '');
+    $email = strtolower(trim($_POST['email'] ?? ''));
+    $phone = trim($_POST['phone'] ?? '');
+
+    $city = trim($_POST['city'] ?? '');
+    $state = trim($_POST['state'] ?? '');
+
     $password = $_POST['password'] ?? '';
     $confirm_password = $_POST['confirm_password'] ?? '';
 
-    if (empty($full_name) || empty($email) || empty($password)) {
-        set_flash('error', 'Please complete all required fields.');
+
+    /*
+    |--------------------------------------------------------------------------
+    | SECURITY:
+    | Normal users can NEVER choose their own role.
+    |--------------------------------------------------------------------------
+    */
+
+    $role = 'registered';
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Validation
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        empty($full_name) ||
+        empty($email) ||
+        empty($password) ||
+        empty($confirm_password)
+    ) {
+
+        set_flash(
+            'error',
+            'Please complete all required fields.'
+        );
+
+        header('Location: ' . base_url('auth/signup.php'));
+        exit;
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Name Validation
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        strlen($full_name) < 2 ||
+        strlen($full_name) > 100
+    ) {
+
+        set_flash(
+            'error',
+            'Please enter a valid name.'
+        );
+
+        header('Location: ' . base_url('auth/signup.php'));
+        exit;
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Email Validation
+    |--------------------------------------------------------------------------
+    */
+
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+
+        set_flash(
+            'error',
+            'Please enter a valid email address.'
+        );
+
+        header('Location: ' . base_url('auth/signup.php'));
+        exit;
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Password Validation
+    |--------------------------------------------------------------------------
+    */
+
+    if (strlen($password) < 8) {
+
+        set_flash(
+            'error',
+            'Password must contain at least 8 characters.'
+        );
+
         header('Location: ' . base_url('auth/signup.php'));
         exit;
     }
 
     if ($password !== $confirm_password) {
-        set_flash('error', 'Passwords do not match.');
+
+        set_flash(
+            'error',
+            'Passwords do not match.'
+        );
+
         header('Location: ' . base_url('auth/signup.php'));
         exit;
     }
 
-    // Check existing email
-    $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
+
+    /*
+    |--------------------------------------------------------------------------
+    | Check Existing Email
+    |--------------------------------------------------------------------------
+    */
+
+    $stmt = $pdo->prepare("
+        SELECT id
+        FROM users
+        WHERE email = ?
+        LIMIT 1
+    ");
+
     $stmt->execute([$email]);
+
     if ($stmt->fetch()) {
-        set_flash('error', 'Email is already registered. Please log in.');
+
+        set_flash(
+            'error',
+            'Email is already registered. Please log in.'
+        );
+
         header('Location: ' . base_url('auth/signup.php'));
         exit;
     }
 
-    $hashed_pass = password_hash($password, PASSWORD_DEFAULT);
-    $badge = ($role === 'volunteer') ? 'Green Forester' : 'Green Starter';
 
-    $stmt = $pdo->prepare("INSERT INTO users (full_name, email, phone, password, role, city, state, badge) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-    $stmt->execute([$full_name, $email, $phone, $hashed_pass, $role, $city, $state, $badge]);
+    /*
+    |--------------------------------------------------------------------------
+    | Secure Password Hash
+    |--------------------------------------------------------------------------
+    */
+
+    $hashed_password = password_hash(
+        $password,
+        PASSWORD_DEFAULT
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Default User Badge
+    |--------------------------------------------------------------------------
+    */
+
+    $badge = 'Green Starter';
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Create Account
+    |--------------------------------------------------------------------------
+    */
+
+    $stmt = $pdo->prepare("
+        INSERT INTO users
+        (
+            full_name,
+            email,
+            phone,
+            password,
+            role,
+            city,
+            state,
+            badge,
+            status
+        )
+        VALUES
+        (?, ?, ?, ?, ?, ?, ?, ?, 'active')
+    ");
+
+    $stmt->execute([
+        $full_name,
+        $email,
+        $phone,
+        $hashed_password,
+        $role,
+        $city,
+        $state,
+        $badge
+    ]);
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Automatically Login New User
+    |--------------------------------------------------------------------------
+    */
 
     $new_id = $pdo->lastInsertId();
+
+    session_regenerate_id(true);
+
     $_SESSION['user_id'] = $new_id;
     $_SESSION['user_name'] = $full_name;
     $_SESSION['user_email'] = $email;
     $_SESSION['user_role'] = $role;
 
-    log_activity("New account created as {$role}");
-    set_flash('success', 'Registration successful! Welcome to Green Future.');
 
-    if ($role === 'volunteer') {
-        header('Location: ' . base_url('volunteer/dashboard.php'));
-    } else {
-        header('Location: ' . base_url('user/dashboard.php'));
+    /*
+    |--------------------------------------------------------------------------
+    | Activity Log
+    |--------------------------------------------------------------------------
+    */
+
+    log_activity(
+        'New registered user account created'
+    );
+
+
+    set_flash(
+        'success',
+        'Registration successful! Welcome to Green Future.'
+    );
+
+
+    header(
+        'Location: ' .
+        base_url('user/dashboard.php')
+    );
+
+    exit;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| FORGOT PASSWORD
+|--------------------------------------------------------------------------
+|
+| We will implement the real reset-token + email system in the
+| next authentication step.
+|
+*/
+
+elseif ($action === 'forgot_password') {
+
+    $email = strtolower(trim($_POST['email'] ?? ''));
+
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+
+        set_flash(
+            'error',
+            'Please enter a valid email address.'
+        );
+
+        header('Location: ' . base_url('auth/forgot-password.php'));
+        exit;
     }
-    exit;
 
-} elseif ($action === 'forgot_password') {
-    $email = sanitize($_POST['email'] ?? '');
-    set_flash('success', 'Password reset instructions have been sent to your email address.');
-    header('Location: ' . base_url('auth/login.php'));
+    /*
+    | Don't reveal whether the email exists.
+    */
+
+    set_flash(
+        'success',
+        'If an account exists with this email, password reset instructions will be sent.'
+    );
+
+    header(
+        'Location: ' .
+        base_url('auth/login.php')
+    );
+
     exit;
-} else {
-    header('Location: ' . base_url('index.php'));
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| INVALID ACTION
+|--------------------------------------------------------------------------
+*/
+
+else {
+
+    set_flash(
+        'error',
+        'Invalid authentication request.'
+    );
+
+    header(
+        'Location: ' .
+        base_url('index.php')
+    );
+
     exit;
 }
 ?>
