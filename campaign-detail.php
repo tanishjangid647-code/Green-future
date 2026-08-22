@@ -23,7 +23,29 @@ $stmt->execute([$id]);
 
 $camp = $stmt->fetch(PDO::FETCH_ASSOC);
 
+// Automatic campaign status
+$today = date('Y-m-d');
 
+if (($camp['status'] ?? '') === 'cancelled') {
+    $display_status = 'cancelled';
+} elseif (!empty($camp['start_date']) && !empty($camp['end_date'])) {
+    if ($today < $camp['start_date']) {
+        $display_status = 'upcoming';
+    } elseif ($today > $camp['end_date']) {
+        $display_status = 'completed';
+    } else {
+        $display_status = 'active';
+    }
+} else {
+    // Compatibility with older campaigns
+    if ($today < $camp['event_date']) {
+        $display_status = 'upcoming';
+    } elseif ($today > $camp['event_date']) {
+        $display_status = 'completed';
+    } else {
+        $display_status = 'active';
+    }
+}
 /*
 |--------------------------------------------------------------------------
 | Campaign Not Found
@@ -136,51 +158,58 @@ if (
                 );
             }
 
+/*
+|--------------------------------------------------------------------------
+| Campaign Status
+|--------------------------------------------------------------------------
+*/
 
-            /*
-            |--------------------------------------------------------------------------
-            | Campaign Status
-            |--------------------------------------------------------------------------
-            */
+// Automatic campaign status
+$today = date('Y-m-d');
 
-            $campaign_status =
-                strtolower(
-                    trim(
-                        (string)($campaign['status'] ?? '')
-                    )
-                );
+if (($campaign['status'] ?? '') === 'cancelled') {
+    $campaign_status = 'cancelled';
 
-            $blocked_statuses = [
-                'cancelled',
-                'completed',
-                'closed',
-                'inactive'
-            ];
+} elseif (!empty($campaign['start_date']) && !empty($campaign['end_date'])) {
 
-            if (in_array($campaign_status, $blocked_statuses, true)) {
+    if ($today < $campaign['start_date']) {
+        $campaign_status = 'upcoming';
 
-                throw new Exception(
-                    'This campaign is no longer accepting participants.'
-                );
-            }
+    } elseif ($today > $campaign['end_date']) {
+        $campaign_status = 'completed';
 
+    } else {
+        $campaign_status = 'active';
+    }
 
-            /*
-            |--------------------------------------------------------------------------
-            | Event Date Check
-            |--------------------------------------------------------------------------
-            */
+} else {
 
-            if (
-                !empty($campaign['event_date']) &&
-                strtotime($campaign['event_date']) < strtotime(date('Y-m-d'))
-            ) {
+    // Compatibility with older campaigns
+    if ($today < $campaign['event_date']) {
+        $campaign_status = 'upcoming';
 
-                throw new Exception(
-                    'This plantation campaign has already taken place.'
-                );
-            }
+    } elseif ($today > $campaign['event_date']) {
+        $campaign_status = 'completed';
 
+    } else {
+        $campaign_status = 'active';
+    }
+}
+
+$blocked_statuses = [
+    'cancelled',
+    'completed',
+    'closed',
+    'inactive'
+];
+
+if (in_array($campaign_status, $blocked_statuses, true)) {
+
+    throw new Exception(
+        'This campaign is no longer accepting participants.'
+    );
+}
+           
 
             /*
             |--------------------------------------------------------------------------
@@ -648,24 +677,38 @@ $reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                     <div class="d-flex justify-content-between align-items-center mb-3">
 
-                        <span
-                            class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2">
+                      <?php
+$status_classes = [
+    'upcoming' => 'bg-primary-subtle text-primary',
+    'active' => 'bg-success-subtle text-success',
+    'completed' => 'bg-secondary-subtle text-secondary',
+    'cancelled' => 'bg-danger-subtle text-danger'
+];
 
-                            <i class="fas fa-leaf me-1"></i>
+$status_class = $status_classes[$display_status]
+    ?? 'bg-secondary-subtle text-secondary';
+?>
 
-                            Green Future Campaign
-
-                        </span>
+<span class="badge <?php echo $status_class; ?> border rounded-pill px-3 py-2">
+    <i class="fas fa-leaf me-1"></i>
+    <?php echo ucfirst($display_status); ?>
+</span>
 
                         <span class="text-muted small">
 
                             <i class="fas fa-calendar me-1"></i>
 
                             <?php
-                            echo date(
-                                'F d, Y',
-                                strtotime($camp['event_date'])
-                            );
+                            if (!empty($camp['start_date']) && !empty($camp['end_date'])) {
+    echo date('M d, Y', strtotime($camp['start_date']))
+        . ' - '
+        . date('M d, Y', strtotime($camp['end_date']));
+} else {
+    echo date(
+        'F d, Y',
+        strtotime($camp['event_date'])
+    );
+}
                             ?>
 
                         </span>
@@ -1047,48 +1090,59 @@ $reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                     </form>
 
+<?php else: ?>
 
-                <?php else: ?>
+    <?php if ($display_status === 'completed'): ?>
 
-                    <form
-                        action="<?php
-                        echo base_url(
-                            'campaign-detail.php?id=' .
-                            $camp['id']
-                        );
-                        ?>"
-                        method="POST">
+        <div class="alert alert-secondary rounded-3 text-center mb-3">
+            <i class="fas fa-calendar-check me-1"></i>
+            This campaign has been completed.
+        </div>
 
-                        <input
-                            type="hidden"
-                            name="action"
-                            value="join"
-                        >
+    <?php elseif ($display_status === 'cancelled'): ?>
 
-                        <input
-                            type="hidden"
-                            name="csrf_token"
-                            value="<?php
-                            echo htmlspecialchars(
-                                generate_csrf_token()
-                            );
-                            ?>"
-                        >
+        <div class="alert alert-danger rounded-3 text-center mb-3">
+            <i class="fas fa-times-circle me-1"></i>
+            This campaign has been cancelled.
+        </div>
 
-                        <button
-                            type="submit"
-                            class="btn btn-primary-green w-100 py-2 fs-6 mb-3">
+    <?php else: ?>
 
-                            <i class="fas fa-user-plus me-1"></i>
+        <form
+            action="<?php echo base_url('campaign-detail.php?id=' . $camp['id']); ?>"
+            method="POST">
 
-                            Join Plantation Drive
+            <input
+                type="hidden"
+                name="action"
+                value="join"
+            >
 
-                        </button>
+            <input
+                type="hidden"
+                name="csrf_token"
+                value="<?php echo htmlspecialchars(generate_csrf_token()); ?>"
+            >
 
-                    </form>
+            <button
+                type="submit"
+                class="btn btn-primary-green w-100 py-2 fs-6 mb-3">
 
-                <?php endif; ?>
+                <i class="fas fa-user-plus me-1"></i>
+                Join Plantation Drive
 
+            </button>
+
+        </form>
+
+    <?php endif; ?>
+
+
+               
+
+                        
+                
+<?php endif; ?>
 
                 <!-- ==================================================
                      QR CODE

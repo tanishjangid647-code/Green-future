@@ -1,44 +1,105 @@
 <?php
+ob_start();
 $page_title = "Manage Campaigns";
 require_once __DIR__ . '/../includes/header.php';
 require_once __DIR__ . '/../includes/navbar.php';
 
 require_role('admin');
 
+
 // Handle Campaign Actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
     $action = $_POST['action'] ?? '';
-    
+
     if ($action === 'create') {
+
         $title = sanitize($_POST['title']);
         $description = sanitize($_POST['description']);
         $organizer = sanitize($_POST['organizer']);
         $species = sanitize($_POST['tree_species']);
-        $event_date = $_POST['event_date'];
+
+        $start_date = $_POST['start_date'];
+        $end_date = $_POST['end_date'];
         $event_time = $_POST['event_time'];
+
         $city = sanitize($_POST['city']);
         $state = sanitize($_POST['state']);
         $address = sanitize($_POST['location_address']);
         $max_vols = intval($_POST['max_volunteers']);
 
-        $stmt = $pdo->prepare("INSERT INTO campaigns (title, description, organizer, tree_species, event_date, event_time, city, state, location_address, max_volunteers, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$title, $description, $organizer, $species, $event_date, $event_time, $city, $state, $address, $max_vols, $_SESSION['user_id']]);
+        // Automatically determine campaign status
+        $today = date('Y-m-d');
+
+        if ($today < $start_date) {
+            $status = 'upcoming';
+        } elseif ($today > $end_date) {
+            $status = 'completed';
+        } else {
+            $status = 'active';
+        }
+
+        $stmt = $pdo->prepare("
+            INSERT INTO campaigns
+            (
+                title,
+                description,
+                organizer,
+                tree_species,
+                event_date,
+                start_date,
+                end_date,
+                event_time,
+                city,
+                state,
+                location_address,
+                max_volunteers,
+                status,
+                created_by
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ");
+
+        $stmt->execute([
+            $title,
+            $description,
+            $organizer,
+            $species,
+            $start_date,
+            $start_date,
+            $end_date,
+            $event_time,
+            $city,
+            $state,
+            $address,
+            $max_vols,
+            $status,
+            $_SESSION['user_id']
+        ]);
 
         log_activity("Created campaign '{$title}'");
         set_flash('success', 'Campaign created successfully!');
+
         header('Location: ' . base_url('admin/campaigns.php'));
         exit;
+
     } elseif ($action === 'delete') {
+
         $id = intval($_POST['id']);
-        $stmt = $pdo->prepare("DELETE FROM campaigns WHERE id = ?");
+
+        $stmt = $pdo->prepare(
+            "DELETE FROM campaigns WHERE id = ?"
+        );
+
         $stmt->execute([$id]);
+
         log_activity("Deleted campaign #{$id}");
         set_flash('success', 'Campaign deleted.');
+
         header('Location: ' . base_url('admin/campaigns.php'));
         exit;
     }
 }
-
 $stmt = $pdo->query("SELECT * FROM campaigns ORDER BY id DESC");
 $campaigns = $stmt->fetchAll();
 ?>
@@ -80,9 +141,44 @@ $campaigns = $stmt->fetchAll();
                   <td><strong class="text-dark"><?php echo sanitize($camp['title']); ?></strong></td>
                   <td><small><?php echo sanitize($camp['organizer']); ?></small></td>
                   <td><i class="fas fa-map-marker-alt text-danger me-1"></i> <?php echo sanitize($camp['city']); ?></td>
-                  <td><?php echo date('M d, Y', strtotime($camp['event_date'])); ?></td>
+                  <td><?php
+if (!empty($camp['start_date']) && !empty($camp['end_date'])) {
+    echo date('M d', strtotime($camp['start_date']))
+       . ' - '
+       . date('M d, Y', strtotime($camp['end_date']));
+} else {
+    echo date('M d, Y', strtotime($camp['event_date']));
+}
+?></td>
                   <td><?php echo $camp['current_volunteers']; ?> / <?php echo $camp['max_volunteers']; ?></td>
-                  <td><span class="badge bg-success"><?php echo ucfirst($camp['status']); ?></span></td>
+                  <td><?php
+$today = date('Y-m-d');
+
+if (!empty($camp['start_date']) && !empty($camp['end_date'])) {
+    if ($today < $camp['start_date']) {
+        $display_status = 'upcoming';
+    } elseif ($today > $camp['end_date']) {
+        $display_status = 'completed';
+    } else {
+        $display_status = 'active';
+    }
+} else {
+    $display_status = $camp['status'];
+}
+
+$status_classes = [
+    'upcoming' => 'bg-warning text-dark',
+    'active' => 'bg-success',
+    'completed' => 'bg-secondary',
+    'cancelled' => 'bg-danger'
+];
+
+$status_class = $status_classes[$display_status] ?? 'bg-secondary';
+?>
+
+<span class="badge <?php echo $status_class; ?>">
+    <?php echo ucfirst($display_status); ?>
+</span></td>
                   <td>
                     <form action="<?php echo base_url('admin/campaigns.php'); ?>" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this campaign?');">
                       <input type="hidden" name="action" value="delete">
@@ -129,16 +225,24 @@ $campaigns = $stmt->fetchAll();
               <input type="text" name="tree_species" class="form-control" value="Neem, Peepal, Banyan" required>
             </div>
           </div>
-          <div class="row g-3 mb-3">
-            <div class="col-md-6">
-              <label class="form-label font-weight-semibold">Event Date *</label>
-              <input type="date" name="event_date" class="form-control" required>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label font-weight-semibold">Event Time *</label>
-              <input type="time" name="event_time" class="form-control" value="08:00" required>
-            </div>
-          </div>
+         <div class="row g-3 mb-3">
+
+  <div class="col-md-4">
+    <label class="form-label font-weight-semibold">Start Date *</label>
+    <input type="date" name="start_date" class="form-control" required>
+  </div>
+
+  <div class="col-md-4">
+    <label class="form-label font-weight-semibold">End Date *</label>
+    <input type="date" name="end_date" class="form-control" required>
+  </div>
+
+  <div class="col-md-4">
+    <label class="form-label font-weight-semibold">Event Time *</label>
+    <input type="time" name="event_time" class="form-control" value="08:00" required>
+  </div>
+
+</div>
           <div class="row g-3 mb-3">
             <div class="col-md-4">
               <label class="form-label font-weight-semibold">City *</label>

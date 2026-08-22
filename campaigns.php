@@ -42,9 +42,9 @@ $page = max(
 
 $allowed_sorts = [
 
-    'date_asc' => 'event_date ASC',
+    'date_asc' => 'start_date ASC',
 
-    'date_desc' => 'event_date DESC',
+    'date_desc' => 'start_date DESC',
 
     'newest' => 'id DESC',
 
@@ -154,31 +154,32 @@ if ($date_filter !== '') {
 
     if ($date_filter === 'today') {
 
-        $where[] = "event_date = CURDATE()";
+        $where[] = "
+            (
+                start_date <= CURDATE()
+                AND end_date >= CURDATE()
+            )
+        ";
 
     } elseif ($date_filter === 'week') {
 
         $where[] = "
-            event_date BETWEEN
-            CURDATE()
-            AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)
+            end_date >= CURDATE()
+            AND start_date <= DATE_ADD(CURDATE(), INTERVAL 7 DAY)
         ";
 
     } elseif ($date_filter === 'month') {
 
         $where[] = "
-            event_date BETWEEN
-            CURDATE()
-            AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+            end_date >= CURDATE()
+            AND start_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY)
         ";
 
     } elseif ($date_filter === 'upcoming') {
 
-        $where[] = "event_date >= CURDATE()";
+        $where[] = "start_date > CURDATE()";
     }
 }
-
-
 /*
 |--------------------------------------------------------------------------
 | WHERE SQL
@@ -814,33 +815,59 @@ function campaign_filter_url($page_number)
                 |--------------------------------------------------------------------------
                 */
 
-                $status =
-                    strtolower(
-                        trim(
-                            (string)$camp['status']
-                        )
-                    );
+               /*
+|--------------------------------------------------------------------------
+| Automatic Campaign Status
+|--------------------------------------------------------------------------
+*/
 
+$today = date('Y-m-d');
 
-                $status_class = 'bg-secondary';
+if (strtolower($camp['status']) === 'cancelled') {
 
-                if ($status === 'active') {
+    // Keep manually cancelled campaigns cancelled
+    $status = 'cancelled';
 
-                    $status_class = 'bg-success';
+} elseif (!empty($camp['start_date']) && !empty($camp['end_date'])) {
 
-                } elseif ($status === 'upcoming') {
+    if ($today < $camp['start_date']) {
+        $status = 'upcoming';
 
-                    $status_class = 'bg-primary';
+    } elseif ($today > $camp['end_date']) {
+        $status = 'completed';
 
-                } elseif ($status === 'completed') {
+    } else {
+        $status = 'active';
+    }
 
-                    $status_class = 'bg-dark';
+} else {
 
-                } elseif ($status === 'cancelled') {
+    // Compatibility with old campaigns
+    if ($today < $camp['event_date']) {
+        $status = 'upcoming';
 
-                    $status_class = 'bg-danger';
+    } elseif ($today > $camp['event_date']) {
+        $status = 'completed';
 
-                }
+    } else {
+        $status = 'active';
+    }
+}
+
+$status_class = 'bg-secondary';
+
+if ($status === 'active') {
+    $status_class = 'bg-success';
+
+} elseif ($status === 'upcoming') {
+    $status_class = 'bg-primary';
+
+} elseif ($status === 'completed') {
+    $status_class = 'bg-dark';
+
+} elseif ($status === 'cancelled') {
+    $status_class = 'bg-danger';
+}
 
                 ?>
 
@@ -1017,13 +1044,22 @@ function campaign_filter_url($page_number)
                                     </i>
 
                                     <?php
-                                    echo date(
-                                        'M d, Y',
-                                        strtotime(
-                                            $camp['event_date']
-                                        )
-                                    );
-                                    ?>
+                                    
+if (!empty($camp['start_date']) && !empty($camp['end_date'])) {
+
+    echo date('M d, Y', strtotime($camp['start_date']))
+        . ' - '
+        . date('M d, Y', strtotime($camp['end_date']));
+
+} else {
+
+    echo date(
+        'M d, Y',
+        strtotime($camp['event_date'])
+    );
+}
+?>
+                                    
 
                                 </div>
 
