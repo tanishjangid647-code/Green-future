@@ -327,3 +327,40 @@ footer a {
 footer a:hover {
   color: var(--light-green);
 }
+
+/* Footer text visibility fix */
+footer {
+    color: #ffffff;
+}
+
+footer p,
+footer .text-muted,
+footer small {
+    color: #d8e8dc !important;
+}
+
+footer a {
+    color: #b8d8c0 !important;
+}
+
+footer a:hover {
+    color: #ffffff !important;
+}
+
+footer h5,
+footer h6 {
+    color: #ffffff !important;
+}
+
+footer .footer-description {
+    color: #d8e8dc !important;
+}
+
+footer .footer-contact,
+footer .footer-contact p {
+    color: #d8e8dc !important;
+}
+
+footer .copyright {
+    color: #b8d8c0 !important;
+}
