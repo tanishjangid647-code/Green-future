@@ -197,79 +197,276 @@ function getWeatherDescription(code) {
   return weatherCodes[code] || 'Unknown Conditions';
 }
 // AI Tree Species Recommendation Logic
+// AI Tree Species Recommendation System
 function initAIRecommender() {
   const form = document.getElementById('ai-recommender-form');
   const resultDiv = document.getElementById('ai-recommendation-result');
+
   if (!form || !resultDiv) return;
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
+
     const city = document.getElementById('ai-city').value;
+    const environment = document.getElementById('ai-environment').value;
     const soil = document.getElementById('ai-soil').value;
+    const water = document.getElementById('ai-water').value;
+    const sunlight = document.getElementById('ai-sunlight').value;
     const purpose = document.getElementById('ai-purpose').value;
 
     resultDiv.innerHTML = `
       <div class="text-center py-4">
         <div class="spinner-border text-success" role="status"></div>
-        <p class="mt-2 text-muted">AI Analyzing Soil Composition & Micro-climate for ${city}...</p>
+        <p class="mt-2 text-muted">
+          AI analyzing location, soil, water and environmental conditions...
+        </p>
       </div>
     `;
 
     setTimeout(() => {
-      let treeName = 'Azadirachta indica (Neem)';
-      let co2 = '25.5 kg/yr';
-      let survival = '96%';
-      let reason = 'High drought resistance, excellent air purifying capacity, and thrives in all soil types.';
 
-      if (purpose === 'fruit') {
-        treeName = 'Mangifera indica (Mango / Alphonso)';
-        co2 = '42.0 kg/yr';
-        survival = '92%';
-        reason = 'Deep taproot system, high fruit yield, and strong canopy shade ideal for urban gardens.';
-      } else if (purpose === 'shade') {
-        treeName = 'Ficus religiosa (Peepal)';
-        co2 = '34.8 kg/yr';
-        survival = '98%';
-        reason = '24-hour oxygen release cycle, vast shade canopy, and rapid growth rate.';
-      } else if (soil === 'sandy') {
-        treeName = 'Red Mangrove / Coconut Palm';
-        co2 = '30.0 kg/yr';
-        survival = '94%';
-        reason = 'High salinity tolerance and coastal soil stabilization properties.';
-      }
+      /*
+       * Each species receives a suitability score.
+       * The score is based on the user's selected conditions.
+       */
+
+      const species = [
+
+        {
+          name: "Azadirachta indica (Neem)",
+          score: 0,
+          co2: "25–35 kg/yr",
+          reason: "Drought tolerant, hardy and well suited to many Indian urban environments.",
+          environments: ["urban", "dry", "rural"],
+          soils: ["loamy", "sandy", "red", "black"],
+          water: ["normal", "low"],
+          sunlight: ["full"],
+          purposes: ["shade", "air", "biodiversity"]
+        },
+
+        {
+          name: "Ficus religiosa (Peepal)",
+          score: 0,
+          co2: "30–40 kg/yr",
+          reason: "Large canopy and strong ecological value make it suitable for spacious sites.",
+          environments: ["urban", "rural", "riverbank"],
+          soils: ["loamy", "clay"],
+          water: ["normal", "high"],
+          sunlight: ["full"],
+          purposes: ["shade", "air", "biodiversity"]
+        },
+
+        {
+          name: "Mangifera indica (Mango)",
+          score: 0,
+          co2: "35–45 kg/yr",
+          reason: "Fruit-bearing tree suitable for warm regions when adequate space and water are available.",
+          environments: ["urban", "rural"],
+          soils: ["loamy", "red", "black"],
+          water: ["normal", "high"],
+          sunlight: ["full"],
+          purposes: ["fruit", "shade", "biodiversity"]
+        },
+
+        {
+          name: "Syzygium cumini (Jamun)",
+          score: 0,
+          co2: "30–40 kg/yr",
+          reason: "A hardy native fruit tree that performs well in warm conditions and supports biodiversity.",
+          environments: ["urban", "rural", "riverbank"],
+          soils: ["loamy", "clay", "black"],
+          water: ["normal", "high"],
+          sunlight: ["full", "partial"],
+          purposes: ["fruit", "biodiversity", "shade"]
+        },
+
+        {
+          name: "Delonix regia (Gulmohar)",
+          score: 0,
+          co2: "25–35 kg/yr",
+          reason: "Fast-growing ornamental tree providing broad shade in warm urban locations.",
+          environments: ["urban", "rural"],
+          soils: ["loamy", "sandy", "red"],
+          water: ["normal", "low"],
+          sunlight: ["full"],
+          purposes: ["shade", "biodiversity"]
+        },
+
+        {
+          name: "Cocos nucifera (Coconut)",
+          score: 0,
+          co2: "20–30 kg/yr",
+          reason: "Well adapted to tropical coastal environments and sandy soils.",
+          environments: ["coastal", "rural"],
+          soils: ["sandy", "saline"],
+          water: ["normal", "high"],
+          sunlight: ["full"],
+          purposes: ["fruit", "coastal_protection"]
+        },
+
+        {
+          name: "Avicennia marina (Grey Mangrove)",
+          score: 0,
+          co2: "20–30 kg/yr",
+          reason: "Highly adapted to saline coastal wetlands and periodically flooded tidal environments.",
+          environments: ["coastal"],
+          soils: ["saline", "sandy", "clay"],
+          water: ["tidal", "high"],
+          sunlight: ["full"],
+          purposes: ["coastal_protection", "biodiversity", "erosion"]
+        },
+
+        {
+          name: "Rhizophora mucronata (Red Mangrove)",
+          score: 0,
+          co2: "20–30 kg/yr",
+          reason: "Suitable for tropical intertidal environments where mangrove restoration is appropriate.",
+          environments: ["coastal"],
+          soils: ["saline", "clay", "sandy"],
+          water: ["tidal", "high"],
+          sunlight: ["full"],
+          purposes: ["coastal_protection", "biodiversity", "erosion"]
+        },
+
+        {
+          name: "Acacia nilotica (Babul)",
+          score: 0,
+          co2: "20–30 kg/yr",
+          reason: "Hardy species with good tolerance to dry conditions and useful for soil stabilization.",
+          environments: ["dry", "rural"],
+          soils: ["sandy", "clay", "black"],
+          water: ["low", "normal"],
+          sunlight: ["full"],
+          purposes: ["erosion", "biodiversity", "air"]
+        },
+
+        {
+          name: "Pongamia pinnata (Karanja)",
+          score: 0,
+          co2: "25–35 kg/yr",
+          reason: "Hardy Indian tree that can tolerate difficult soils and is useful for ecological restoration.",
+          environments: ["coastal", "rural", "urban", "riverbank"],
+          soils: ["sandy", "loamy", "saline"],
+          water: ["normal", "high"],
+          sunlight: ["full"],
+          purposes: ["biodiversity", "erosion", "air", "coastal_protection"]
+        }
+
+      ];
+
+      // Calculate suitability score
+      species.forEach(tree => {
+
+        if (tree.environments.includes(environment)) {
+          tree.score += 30;
+        }
+
+        if (tree.soils.includes(soil)) {
+          tree.score += 20;
+        }
+
+        if (tree.water.includes(water)) {
+          tree.score += 20;
+        }
+
+        if (tree.sunlight.includes(sunlight)) {
+          tree.score += 10;
+        }
+
+        if (tree.purposes.includes(purpose)) {
+          tree.score += 20;
+        }
+
+      });
+
+      // Sort from highest suitability to lowest
+      species.sort((a, b) => b.score - a.score);
+
+      // Select top 3
+      const recommendations = species.slice(0, 3);
+
+      // Make sure city is displayed
+      const cityName = city === "Other"
+        ? "your selected location"
+        : city;
 
       resultDiv.innerHTML = `
         <div class="alert alert-success border-success bg-white shadow-sm rounded-4 p-4 mt-3">
-          <div class="d-flex align-items-center gap-3 mb-3">
-            <div class="bg-success text-white p-3 rounded-circle fs-3">
+
+          <div class="text-center mb-4">
+            <div class="bg-success text-white p-3 rounded-circle d-inline-block fs-3">
               <i class="fas fa-seedling"></i>
             </div>
-            <div>
-              <span class="badge bg-success mb-1">Recommended Species</span>
-              <h5 class="mb-0 fw-bold text-success">${treeName}</h5>
-            </div>
+
+            <h5 class="mt-2 mb-1 fw-bold text-success">
+              AI Species Recommendations
+            </h5>
+
+            <p class="small text-muted mb-0">
+              Based on ${cityName}, ${environment} environment,
+              ${soil} soil and ${purpose.replaceAll("_", " ")} goal.
+            </p>
           </div>
-          <div class="row text-center mb-3">
-            <div class="col-6">
-              <div class="p-2 bg-light rounded-3">
-                <small class="text-muted d-block">Est. CO₂ Offset</small>
-                <strong class="text-dark fs-6">${co2}</strong>
+
+          ${recommendations.map((tree, index) => `
+            <div class="border rounded-4 p-3 mb-3 bg-light">
+
+              <div class="d-flex justify-content-between align-items-center mb-2">
+
+                <div>
+                  <span class="badge bg-success mb-1">
+                    ${index === 0 ? "Best Match" : "Alternative " + index}
+                  </span>
+
+                  <h6 class="fw-bold text-success mb-0">
+                    ${tree.name}
+                  </h6>
+                </div>
+
+                <div class="text-end">
+                  <strong class="text-success">
+                    ${tree.score}%
+                  </strong>
+                  <small class="d-block text-muted">
+                    Suitability
+                  </small>
+                </div>
+
               </div>
-            </div>
-            <div class="col-6">
-              <div class="p-2 bg-light rounded-3">
-                <small class="text-muted d-block">Survival Rate</small>
-                <strong class="text-success fs-6">${survival}</strong>
+
+              <div class="progress mb-2" style="height: 7px;">
+                <div
+                  class="progress-bar bg-success"
+                  style="width: ${tree.score}%;">
+                </div>
               </div>
+
+              <p class="small text-secondary mb-2">
+                <strong>Why?</strong> ${tree.reason}
+              </p>
+
+              <small class="text-muted">
+                Estimated CO₂ benefit: ${tree.co2}
+              </small>
+
             </div>
+          `).join("")}
+
+          <div class="alert alert-warning mt-3 mb-0 small">
+            <i class="fas fa-info-circle me-1"></i>
+            <strong>Important:</strong>
+            This advisor provides a suitability estimate based on the
+            selected conditions. Final species selection should consider
+            local native-species guidance, site conditions and expert
+            forestry advice.
           </div>
-          <p class="small text-secondary mb-0"><strong>Why this tree?</strong> ${reason}</p>
+
         </div>
       `;
-    }, 1000);
+
+    }, 900);
   });
 }
-
 document.addEventListener('DOMContentLoaded', () => {
 
   const weatherCard =

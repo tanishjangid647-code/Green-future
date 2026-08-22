@@ -46,42 +46,97 @@ $featured_campaigns = $pdo->query("SELECT * FROM campaigns ORDER BY event_date A
             <h5 class="fw-bold mb-0 text-success"><i class="fas fa-robot me-2"></i> AI Species Advisor</h5>
             <span class="badge bg-success-subtle text-success">Smart Engine</span>
           </div>
+      <form id="ai-recommender-form">
 
-          <form id="ai-recommender-form">
-            <div class="mb-3">
-              <label class="form-label small font-weight-semibold">Your Target City</label>
-              <select id="ai-city" class="form-select form-select-sm">
-                <option value="Mumbai">Mumbai (Coastal & Humid)</option>
-                <option value="Pune">Pune (Moderate & Hilly)</option>
-                <option value="Bangalore">Bangalore (High Plateau)</option>
-                <option value="Delhi">Delhi (Semiarid Extremes)</option>
-                <option value="Kolkata">Kolkata (Riparian Wetland)</option>
-              </select>
-            </div>
-            <div class="row g-2 mb-3">
-              <div class="col-6">
-                <label class="form-label small font-weight-semibold">Soil Type</label>
-                <select id="ai-soil" class="form-select form-select-sm">
-                  <option value="loamy">Loamy / Rich Soil</option>
-                  <option value="clay">Red Clay</option>
-                  <option value="sandy">Sandy / Coastal</option>
-                </select>
-              </div>
-              <div class="col-6">
-                <label class="form-label small font-weight-semibold">Plantation Goal</label>
-                <select id="ai-purpose" class="form-select form-select-sm">
-                  <option value="shade">Urban Canopy Shade</option>
-                  <option value="fruit">Fruit Bearing</option>
-                  <option value="air">Air Purification</option>
-                </select>
-              </div>
-            </div>
-            <button type="submit" class="btn btn-primary-green btn-sm w-100 py-2 rounded-pill">
-              <i class="fas fa-magic me-1"></i> Analyze & Recommend Species
-            </button>
-          </form>
+  <!-- Location -->
+  <div class="mb-3">
+    <label class="form-label small font-weight-semibold">Target Location</label>
+    <select id="ai-city" class="form-select form-select-sm">
+      <option value="Mumbai">Mumbai</option>
+      <option value="Pune">Pune</option>
+      <option value="Bangalore">Bangalore</option>
+      <option value="Delhi">Delhi</option>
+      <option value="Kolkata">Kolkata</option>
+      <option value="Chennai">Chennai</option>
+      <option value="Kochi">Kochi</option>
+      <option value="Jaipur">Jaipur</option>
+      <option value="Ahmedabad">Ahmedabad</option>
+      <option value="Bhubaneswar">Bhubaneswar</option>
+      <option value="Other">Other Indian Location</option>
+    </select>
+  </div>
 
-          <div id="ai-recommendation-result"></div>
+  <!-- Environment -->
+  <div class="mb-3">
+    <label class="form-label small font-weight-semibold">Environment</label>
+    <select id="ai-environment" class="form-select form-select-sm">
+      <option value="urban">Urban / Residential</option>
+      <option value="coastal">Coastal / Saline</option>
+      <option value="riverbank">Riverbank / Wetland</option>
+      <option value="dry">Dry / Semi-Arid</option>
+      <option value="hilly">Hilly / Highland</option>
+      <option value="rural">Rural / Agricultural</option>
+    </select>
+  </div>
+
+  <!-- Soil + Water -->
+  <div class="row g-2 mb-3">
+
+    <div class="col-6">
+      <label class="form-label small font-weight-semibold">Soil Type</label>
+      <select id="ai-soil" class="form-select form-select-sm">
+        <option value="loamy">Loamy / Rich</option>
+        <option value="clay">Clay / Heavy</option>
+        <option value="sandy">Sandy</option>
+        <option value="saline">Saline</option>
+        <option value="black">Black Soil</option>
+        <option value="red">Red Soil</option>
+      </select>
+    </div>
+
+    <div class="col-6">
+      <label class="form-label small font-weight-semibold">Water Availability</label>
+      <select id="ai-water" class="form-select form-select-sm">
+        <option value="normal">Regular</option>
+        <option value="low">Low / Limited</option>
+        <option value="high">High / Wet</option>
+        <option value="tidal">Tidal / Periodically Flooded</option>
+      </select>
+    </div>
+
+  </div>
+
+  <!-- Sunlight -->
+  <div class="mb-3">
+    <label class="form-label small font-weight-semibold">Sunlight</label>
+    <select id="ai-sunlight" class="form-select form-select-sm">
+      <option value="full">Full Sun</option>
+      <option value="partial">Partial Shade</option>
+      <option value="shade">Mostly Shaded</option>
+    </select>
+  </div>
+
+  <!-- Purpose -->
+  <div class="mb-3">
+    <label class="form-label small font-weight-semibold">Plantation Goal</label>
+    <select id="ai-purpose" class="form-select form-select-sm">
+      <option value="shade">Urban Canopy / Shade</option>
+      <option value="fruit">Fruit Production</option>
+      <option value="air">Air Purification</option>
+      <option value="biodiversity">Biodiversity</option>
+      <option value="coastal_protection">Coastal Protection</option>
+      <option value="erosion">Soil / Erosion Control</option>
+    </select>
+  </div>
+
+  <button type="submit" class="btn btn-primary-green btn-sm w-100 py-2 rounded-pill">
+    <i class="fas fa-magic me-1"></i>
+    Analyze & Recommend Species
+  </button>
+
+</form>
+
+<div id="ai-recommendation-result"></div>
         </div>
       </div>
     </div>
