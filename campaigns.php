@@ -881,14 +881,10 @@ if ($status === 'active') {
                         <div class="campaign-img-wrapper">
 
                             <img
-                                src="https://picsum.photos/600/350?random=<?php echo (int)$camp['id']; ?>"
-                                alt="<?php
-                                echo htmlspecialchars(
-                                    $camp['title']
-                                );
-                                ?>"
-                                loading="lazy"
-                            >
+    src="<?php echo campaign_image_url($camp, 600, 350); ?>"
+    alt="<?php echo htmlspecialchars($camp['title']); ?>"
+    loading="lazy"
+>
                             <?php if (isset($_SESSION['user_id'])): ?>
 
     <?php

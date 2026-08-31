@@ -195,7 +195,10 @@ $featured_campaigns = $pdo->query("SELECT * FROM campaigns ORDER BY event_date A
         <div class="col-md-4" data-aos="fade-up">
           <div class="campaign-card h-100 d-flex flex-column">
             <div class="campaign-img-wrapper">
-              <img src="https://picsum.photos/600/350?random=<?php echo $camp['id']; ?>" alt="Campaign Banner">
+            <img 
+    src="<?php echo campaign_image_url($camp, 600, 350); ?>" 
+    alt="<?php echo htmlspecialchars($camp['title']); ?>"
+>
               <span class="badge-status badge-upcoming"><?php echo ucfirst($camp['status']); ?></span>
             </div>
             <div class="p-4 d-flex flex-column flex-grow-1">

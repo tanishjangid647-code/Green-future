@@ -667,11 +667,11 @@ $reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
 
                 <img
-                    src="https://picsum.photos/1200/500?random=<?php echo (int)$camp['id']; ?>"
-                    class="img-fluid"
-                    style="height: 350px; object-fit: cover;"
-                    alt="Campaign Banner"
-                >
+    src="<?php echo campaign_image_url($camp, 1200, 500); ?>"
+    class="img-fluid"
+    style="height: 350px; object-fit: cover;"
+    alt="<?php echo htmlspecialchars($camp['title']); ?>"
+>
 
                 <div class="card-body p-4 p-md-5">
 

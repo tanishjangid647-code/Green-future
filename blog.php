@@ -17,7 +17,12 @@ $blogs = $pdo->query("SELECT b.*, u.full_name as author_name FROM blogs b LEFT J
     <?php foreach ($blogs as $blog): ?>
       <div class="col-md-4">
         <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
-          <img src="https://picsum.photos/600/350?random=<?php echo $blog['id'] + 50; ?>" class="img-fluid" style="height: 200px; object-fit: cover;" alt="Blog">
+       <img 
+    src="<?php echo content_image_url($blog, 600, 350); ?>" 
+    class="img-fluid" 
+    style="height: 200px; object-fit: cover;" 
+    alt="<?php echo sanitize($blog['title']); ?>"
+>
           <div class="card-body p-4 d-flex flex-column">
             <span class="badge bg-success-subtle text-success me-auto mb-2"><?php echo sanitize($blog['category']); ?></span>
             <h5 class="fw-bold mb-2 text-dark"><?php echo sanitize($blog['title']); ?></h5>

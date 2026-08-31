@@ -17,7 +17,12 @@ $gallery = $pdo->query("SELECT * FROM gallery ORDER BY id DESC")->fetchAll();
     <?php foreach ($gallery as $item): ?>
       <div class="col-md-4 col-lg-3" data-aos="zoom-in">
         <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
-          <img src="https://picsum.photos/600/400?random=<?php echo $item['id']; ?>" class="img-fluid" style="height: 220px; object-fit: cover;" alt="Gallery">
+        <img 
+    src="<?php echo content_image_url($item, 600, 400); ?>" 
+    class="img-fluid" 
+    style="height: 220px; object-fit: cover;" 
+    alt="<?php echo sanitize($item['title']); ?>"
+>
           <div class="card-body p-3">
             <span class="badge bg-success-subtle text-success mb-1"><?php echo sanitize($item['category']); ?></span>
             <h6 class="fw-bold mb-0 text-dark"><?php echo sanitize($item['title']); ?></h6>

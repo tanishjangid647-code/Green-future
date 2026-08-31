@@ -121,4 +121,113 @@ function get_flash($type) {
     }
     return null;
 }
+// Automatically generate a suitable campaign image URL
+function campaign_image_url($campaign, $width = 600, $height = 350) {
+
+    $title = strtolower($campaign['title'] ?? '');
+    $description = strtolower($campaign['description'] ?? '');
+    $species = strtolower($campaign['tree_species'] ?? '');
+    $city = strtolower($campaign['city'] ?? '');
+
+    $text = $title . ' ' . $description . ' ' . $species . ' ' . $city;
+
+    // Select suitable image category
+    if (
+        strpos($text, 'mangrove') !== false ||
+        strpos($text, 'coastal') !== false ||
+        strpos($text, 'marine') !== false
+    ) {
+        $tags = 'mangrove,forest,trees,nature';
+    } elseif (
+        strpos($text, 'river') !== false ||
+        strpos($text, 'riverbank') !== false ||
+        strpos($text, 'wetland') !== false
+    ) {
+        $tags = 'river,forest,trees,nature';
+    } elseif (
+        strpos($text, 'school') !== false ||
+        strpos($text, 'campus') !== false
+    ) {
+        $tags = 'school,garden,trees,planting';
+    } elseif (
+        strpos($text, 'urban') !== false ||
+        strpos($text, 'city') !== false ||
+        strpos($text, 'air') !== false
+    ) {
+        $tags = 'urban,trees,greenery,city';
+    } elseif (
+        strpos($text, 'fruit') !== false ||
+        strpos($text, 'mango') !== false ||
+        strpos($text, 'guava') !== false
+    ) {
+        $tags = 'fruit,tree,planting,nature';
+    } else {
+        $tags = 'tree,forest,planting,nature';
+    }
+
+    // lock makes the same campaign keep the same image
+    $lock = intval($campaign['id'] ?? 1);
+
+    return "https://loremflickr.com/{$width}/{$height}/{$tags}?lock={$lock}";
+}
+// Automatically generate a suitable image for gallery/blog content
+function content_image_url($content, $width = 600, $height = 350) {
+
+    $title = strtolower($content['title'] ?? '');
+    $description = strtolower($content['description'] ?? '');
+    $content_text = strtolower($content['content'] ?? '');
+
+    $text = $title . ' ' . $description . ' ' . $content_text;
+
+    // Select suitable image category
+    if (
+        strpos($text, 'mangrove') !== false ||
+        strpos($text, 'coastal') !== false ||
+        strpos($text, 'marine') !== false
+    ) {
+        $tags = 'mangrove,coast,forest,nature';
+
+    } elseif (
+        strpos($text, 'river') !== false ||
+        strpos($text, 'wetland') !== false
+    ) {
+        $tags = 'river,trees,forest,nature';
+
+    } elseif (
+        strpos($text, 'school') !== false ||
+        strpos($text, 'campus') !== false
+    ) {
+        $tags = 'school,garden,trees,planting';
+
+    } elseif (
+        strpos($text, 'climate') !== false ||
+        strpos($text, 'carbon') !== false ||
+        strpos($text, 'pollution') !== false ||
+        strpos($text, 'air') !== false
+    ) {
+        $tags = 'climate,environment,trees,nature';
+
+    } elseif (
+        strpos($text, 'biodiversity') !== false ||
+        strpos($text, 'wildlife') !== false
+    ) {
+        $tags = 'biodiversity,forest,wildlife,nature';
+
+    } elseif (
+        strpos($text, 'plant') !== false ||
+        strpos($text, 'tree') !== false ||
+        strpos($text, 'forest') !== false
+    ) {
+        $tags = 'tree,forest,planting,nature';
+
+    } else {
+        $tags = 'nature,environment,trees,forest';
+    }
+
+    // Use content ID so the same item keeps the same image
+    $lock = intval($content['id'] ?? 1);
+
+    return "https://loremflickr.com/{$width}/{$height}/{$tags}?lock={$lock}";
+}
 ?>
+
