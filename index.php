@@ -150,28 +150,32 @@ $featured_campaigns = $pdo->query("SELECT * FROM campaigns ORDER BY event_date A
       <div class="col-6 col-md-3" data-aos="zoom-in" data-aos-delay="100">
         <div class="p-3">
           <i class="fas fa-tree fs-1 text-success mb-2"></i>
-          <h2 class="counter-number mb-0" data-target="<?php echo max($total_trees, 2450); ?>">0</h2>
+          <h2 class="counter-number mb-0" data-target="<?php echo $total_trees; ?>"
+          >0</h2>
           <span class="text-muted fw-semibold small" data-i18n="stat-planted">Trees Planted</span>
         </div>
       </div>
       <div class="col-6 col-md-3" data-aos="zoom-in" data-aos-delay="200">
         <div class="p-3">
           <i class="fas fa-smog fs-1 text-warning mb-2"></i>
-          <h2 class="counter-number mb-0" data-target="<?php echo max(intval($total_co2), 53400); ?>">0</h2>
+          <h2 class="counter-number mb-0" data-target="<?php echo intval($total_co2); ?>"
+          >0</h2>
           <span class="text-muted fw-semibold small" data-i18n="stat-co2">Kg CO₂ Saved</span>
         </div>
       </div>
       <div class="col-6 col-md-3" data-aos="zoom-in" data-aos-delay="300">
         <div class="p-3">
           <i class="fas fa-users fs-1 text-primary mb-2"></i>
-          <h2 class="counter-number mb-0" data-target="<?php echo max($total_volunteers, 1280); ?>">0</h2>
+          <h2 class="counter-number mb-0" data-target="<?php echo $total_volunteers; ?>"
+          >0</h2>
           <span class="text-muted fw-semibold small" data-i18n="stat-volunteers">Active Volunteers</span>
         </div>
       </div>
       <div class="col-6 col-md-3" data-aos="zoom-in" data-aos-delay="400">
         <div class="p-3">
           <i class="fas fa-bullhorn fs-1 text-danger mb-2"></i>
-          <h2 class="counter-number mb-0" data-target="<?php echo max($total_campaigns, 48); ?>">0</h2>
+          <h2 class="counter-number mb-0" data-target="<?php echo $total_campaigns; ?>"
+          >0</h2>
           <span class="text-muted fw-semibold small" data-i18n="stat-campaigns">Successful Campaigns</span>
         </div>
       </div>
